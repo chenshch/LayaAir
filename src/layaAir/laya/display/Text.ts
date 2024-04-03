@@ -381,7 +381,7 @@ export class Text extends Sprite {
         else if (value && (Utils.getFileExtension(value) || value.startsWith("res://"))) {
             let t = value;
             let fontObj = ILaya.loader.getRes(value);
-            if (!fontObj) {
+            if (!fontObj || fontObj.obsolute) {
                 ILaya.loader.load(value).then(fontObj => {
                     if (!fontObj || this._realFont != t)
                         return;
@@ -512,6 +512,20 @@ export class Text extends Sprite {
     set valign(value: string) {
         if (this._textStyle.valign != value) {
             this._textStyle.valign = value;
+            this.markChanged();
+        }
+    }
+
+    /**
+     * 图文混排时图片和文字的对齐方式。可选值是top,middle,bottom
+     */
+    get alignItems(): string {
+        return this._textStyle.alignItems;
+    }
+
+    set alignItems(value: string) {
+        if (this._textStyle.alignItems != value) {
+            this._textStyle.alignItems = value;
             this.markChanged();
         }
     }
@@ -982,6 +996,7 @@ export class Text extends Sprite {
         }
         let rectHeight = this._isHeightSet ? (this._height - padding[0] - padding[2]) : Number.MAX_VALUE;
         let bfont = this._bitmapFont;
+        let alignItems = this._textStyle.alignItems == "middle" ? 1 : (this._textStyle.alignItems == "bottom" ? 2 : 0);
 
         let lineX: number, lineY: number;
         let curLine: ITextLine;
@@ -1089,7 +1104,12 @@ export class Text extends Sprite {
             //调整元素y位置
             cmd = curLine.cmd;
             while (cmd) {
-                cmd.y = Math.floor((lineHeight - cmd.height) * 0.5);
+                if (alignItems == 1)
+                    cmd.y = Math.floor((lineHeight - cmd.height) * 0.5);
+                else if (alignItems == 2)
+                    cmd.y = Math.floor((lineHeight - cmd.height));
+                else
+                    cmd.y = 0;
                 cmd = cmd.next;
             }
 
